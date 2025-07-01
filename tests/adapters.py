@@ -8,6 +8,7 @@ from jaxtyping import Float, Int
 import numpy.typing as npt
 import torch
 from torch import Tensor
+from torch.nn import Module
 
 
 
@@ -17,6 +18,8 @@ def run_linear(
     weights: Float[Tensor, " d_out d_in"],
     in_features: Float[Tensor, " ... d_in"],
 ) -> Float[Tensor, " ... d_out"]:
+    from cs336_basics.Model import Linear
+    from collections import OrderedDict
     """
     Given the weights of a Linear layer, compute the transformation of a batched input.
 
@@ -29,8 +32,12 @@ def run_linear(
     Returns:
         Float[Tensor, "... d_out"]: The transformed output of your linear module.
     """
+    
+    model = Linear(d_in, d_out,)
+    state = {"weight": weights}
+    model.load_state_dict(state)
+    return model.forward(in_features)
 
-    raise NotImplementedError
 
 
 def run_embedding(
