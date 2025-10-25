@@ -23,7 +23,30 @@ def cross_entropy(inputs:Float[Tensor, " batch_size vocab_size"],
     right = torch.log(sum_dimension)
     return torch.mean(- left + right)
 
+def learning_rate_schedule(t, lr_max, lr_min, T_warmup, T_cooled):
+    if t < T_warmup:
+        return lr_max * (t/T_warmup)
+    elif t <= T_cooled:
+        return lr_min + 0.5 * (lr_max - lr_min) * (1 + math.cos(((t-T_warmup)/(T_cooled-T_warmup))*torch.pi))
+    else:
+        return lr_min
+    
+def gradient_clipping(parameters: Iterable[torch.nn.Parameter], max_l2_norm, epsilon=1e-6):
+    global_l2_norm = 0
+    for p in parameters:
+        if p.grad == None:
+            continue
 
+        global_l2_norm += torch.linalg.norm(p.grad) ** 2
+
+    if global_l2_norm >= max_l2_norm ** 2:
+        for p in parameters:
+            if p.grad == None:
+                continue
+            p.grad *= max_l2_norm/(math.sqrt(global_l2_norm)+epsilon)
+
+
+    
 class AdamW(torch.optim.Optimizer):
     def __init__(self, params, weight_decay=0.01, betas=(0.9, 0.95), eps=1e-8, lr=1e-3):
         if lr < 0:
