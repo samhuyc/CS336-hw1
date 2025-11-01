@@ -3,6 +3,114 @@ import json
 from typing import Any, Iterable, Iterator
 from pathlib import Path
 
+
+from collections import Counter
+import regex as re
+from tqdm import tqdm
+from collections import defaultdict
+
+def pre_tokenize(data, special_token = []):
+    # init vocab
+    vocab = {b: bytes([b]) for b in range(256)}
+    index = 256
+
+    # use re to pre-tokenize
+    data_list = [data]
+
+    for sp in special_token:
+        vocab[index] = sp.encode('utf-8')
+        index += 1
+        new_data_list = []
+        for dat in data_list:
+            new_data_list.extend(dat.split(sp))
+        data_list = new_data_list
+
+    PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+    pre_tokenized = []
+    for data in data_list:
+        data_pre_tokenized = re.finditer(PAT, data) # returns a list of words
+        pre_tokenized.extend(data_pre_tokenized)
+
+    counter = defaultdict(int)
+    for tok in pre_tokenized:
+        counter[tuple([i.to_bytes(1, 'big') for i in tok.group().encode("utf-8")])] += 1
+
+    return counter, vocab
+
+def convert(tok):
+    if isinstance(tok, bytes):
+        return tok
+    # tok is a tuple of sub-tokens – flatten each of them
+    return b"".join(convert(t) for t in tok)
+
+
+def merge(pre_tokenized, max_size, vocab):
+    # create an initial frequency table
+    letter_table = Counter(pre_tokenized)
+    merges = []
+    merge_size = max_size - len(vocab)
+    token_id = len(vocab)
+
+
+    with tqdm(total=merge_size, desc="BPE Merges", unit="merge") as pbar:
+        for _ in range(merge_size):
+            # build the pair-frequency table
+            pairs_table = {}
+            for word, freq in letter_table.items():
+                # print(word, freq, type(word))
+                for i in range(len(word) - 1):
+                    pair = word[i:i+2]
+                    pairs_table[pair] = pairs_table.get(pair, 0) + freq
+
+            # choose the most frequent pair
+            if not pairs_table:
+                break
+            max_freq  = max(pairs_table.values())
+            top_pairs = [k for k, v in pairs_table.items() if v == max_freq]
+            top_p     = max(top_pairs)
+
+            # create the new token
+            new_token = convert(top_p[0]) + convert(top_p[1])
+            merges.append((convert(top_p[0]), convert(top_p[1])))
+            vocab[token_id] = new_token
+            token_id += 1
+
+            # rewrite every word using the new symbol
+            new_letter_table = {}
+            for word, freq in letter_table.items():
+                new_word = []
+                i = 0
+                while i < len(word):
+                    if i + 1 < len(word) and word[i:i+2] == top_p:
+                        new_word.append(new_token)
+                        i += 2
+                    else:
+                        new_word.append(word[i])
+                        i += 1
+                new_letter_table[tuple(new_word)] = freq
+
+            letter_table = new_letter_table
+
+            pbar.update(1)
+
+    return vocab, merges
+
+def BPE(input_path: str, data:str, vocab_size: int, special_tokens: list[str]):
+    if not data:
+        with open(input_path, encoding="utf-8") as f:
+            data = f.read()
+
+    # print(data[:100])
+    pre_tokenized, vocab = pre_tokenize(data, special_tokens)
+    # print('finished pretokentizing')
+    # print(pre_tokenized[:100])
+    # print('finished pretokentizing')
+    vocab, merges = merge(pre_tokenized, vocab_size - len(special_tokens) +1, vocab)
+    return vocab, merges
+
+
+
+
 class Tokenizer():
     def __init__(self, 
                  vocab: dict[int, bytes], 

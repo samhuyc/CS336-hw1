@@ -461,7 +461,9 @@ def run_silu(in_features: Float[Tensor, " ..."]) -> Float[Tensor, " ..."]:
         Float[Tensor,"..."]: of with the same shape as `in_features` with the output of applying
         SiLU to each element.
     """
-    raise NotImplementedError
+    def SiLU(x:torch.Tensor) -> torch.Tensor: 
+        return x * torch.sigmoid(x)
+    return SiLU(in_features)
 
 
 def run_get_batch(
@@ -484,7 +486,9 @@ def run_get_batch(
         is the sampled input sequences, and the second tuple item is the corresponding
         language modeling labels.
     """
-    raise NotImplementedError
+    from cs336_basics import Experiment
+
+    return Experiment.data_load(dataset, batch_size, context_length, device)
 
 
 def run_softmax(in_features: Float[Tensor, " ..."], dim: int) -> Float[Tensor, " ..."]:
@@ -591,7 +595,8 @@ def run_save_checkpoint(
             we've completed.
         out (str | os.PathLike | BinaryIO | IO[bytes]): Path or file-like object to serialize the model, optimizer, and iteration to.
     """
-    raise NotImplementedError
+    from cs336_basics.Experiment import my_save_checkpoint
+    my_save_checkpoint(model, optimizer, iteration, out)
 
 
 def run_load_checkpoint(
@@ -612,8 +617,9 @@ def run_load_checkpoint(
     Returns:
         int: the previously-serialized number of iterations.
     """
-    raise NotImplementedError
-
+    from cs336_basics.Experiment import my_load_checkpoint
+    res =  my_load_checkpoint(src, model, optimizer)
+    return res
 
 def get_tokenizer(
     vocab: dict[int, bytes],
@@ -666,4 +672,10 @@ def run_train_bpe(
                 representing that <token1> was merged with <token2>.
                 Merges are ordered by order of creation.
     """
-    raise NotImplementedError
+    from cs336_basics import Tokenizer
+    vocab, merges = Tokenizer.BPE(input_path=input_path, 
+                                  data=None, 
+                                  vocab_size=vocab_size, 
+                                  special_tokens=special_tokens)
+    
+    return (vocab, merges)

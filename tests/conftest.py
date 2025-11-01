@@ -114,6 +114,8 @@ class Snapshot:
         
         if isinstance(actual, dict):
             for key in actual: 
+                # print(actual[key])
+                # print(expected_data[key])
                 if key not in expected_data:
                     raise AssertionError(f"Key '{key}' not found in snapshot for {test_name}")
                 assert actual[key] == expected_data[key], f"Data for key '{key}' does not match snapshot for {test_name}"
