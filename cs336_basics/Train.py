@@ -76,7 +76,7 @@ class AdamW(torch.optim.Optimizer):
                 m = beta1 * m + (1-beta1) * grad
                 v = beta2 * v + (1-beta2) * (grad **2)
                 lr_t = lr * math.sqrt(1-beta2**t)/(1-beta1**t)
-                p.data -= lr_t * (m/v**0.5 + epsilon) 
+                p.data -= lr_t * (m/(v**0.5 + epsilon)) 
                 p.data -= weight_decay * lr * p.data
                 state['t'] = t + 1
                 state['m'] = m

@@ -118,4 +118,4 @@ def test_checkpointing(tmp_path):
             new_model_state[key].detach().numpy(),
         )
     # compare the optimizer state dicts
-    assert are_optimizers_equal(original_optimizer_state, new_optimizer_state)
+    assert are_optimizers_equal(original_optimizer_state, new_optimizer_state), 'optimizer failed'
