@@ -273,11 +273,7 @@ class TransformerLM(torch.nn.Module):
         self.d_model = d_model
         self.num_layers = num_layers
         self.embedding = Embedding(num_embeddings=vocab_size, embedding_dim=d_model, )
-        # self.transformers = [TransformerBlock(d_model=d_model,
-        #                                       h=h, 
-        #                                       d_ff=d_ff, 
-        #                                       max_seq_len=context_length, 
-        #                                       theta=theta) for _ in range(num_layers)]
+
         self.transformers = torch.nn.ModuleList([
             TransformerBlock(d_model=d_model,
                                               h=h, 
@@ -296,7 +292,6 @@ class TransformerLM(torch.nn.Module):
             input = output
         normalized_output = self.rms_final.forward(output)
         output_embedded = self.linear.forward(normalized_output)
-        # return softmax(output_embedded, dimension=-1)
         return output_embedded
 
 
